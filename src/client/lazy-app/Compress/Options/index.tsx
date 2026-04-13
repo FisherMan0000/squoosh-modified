@@ -15,6 +15,7 @@ import {
 import Expander from './Expander';
 import Toggle from './Toggle';
 import Select from './Select';
+import { Options as LeftSubjectMaskOptionsComponent } from 'features/processors/leftSubjectMask/client';
 import { Options as QuantOptionsComponent } from 'features/processors/quantize/client';
 import { Options as ResizeOptionsComponent } from 'features/processors/resize/client';
 import { ImportIcon, SaveIcon, SwapIcon } from 'client/lazy-app/icons';
@@ -111,6 +112,10 @@ export default class Options extends Component<Props, State> {
     const el = event.currentTarget as HTMLInputElement;
     const processor = el.name.split('.')[0] as keyof ProcessorState;
 
+    if (processor === 'leftSubjectMask' && el.checked) {
+      this.props.onEncoderTypeChange(this.props.index, 'browserPNG');
+    }
+
     this.props.onProcessorOptionsChange(
       this.props.index,
       cleanSet(this.props.processorState, `${processor}.enabled`, el.checked),
@@ -121,6 +126,15 @@ export default class Options extends Component<Props, State> {
     this.props.onProcessorOptionsChange(
       this.props.index,
       cleanMerge(this.props.processorState, 'quantize', opts),
+    );
+  };
+
+  private onLeftSubjectMaskOptionsChange = (
+    opts: ProcessorOptions['leftSubjectMask'],
+  ) => {
+    this.props.onProcessorOptionsChange(
+      this.props.index,
+      cleanMerge(this.props.processorState, 'leftSubjectMask', opts),
     );
   };
 
@@ -164,88 +178,102 @@ export default class Options extends Component<Props, State> {
         }
       >
         <Expander>
-          {!encoderState ? null : (
-            <div>
-              <h3 class={style.optionsTitle}>
-                <div class={style.titleAndButtons}>
-                  Edit
-                  <button
-                    class={style.copyOverButton}
-                    title="Copy settings to other side"
-                    onClick={this.onCopyToOtherSideClick}
-                  >
-                    <SwapIcon />
-                  </button>
-                  <button
-                    class={style.saveButton}
-                    title="Save side settings"
-                    onClick={this.onSaveSideSettingClick}
-                  >
-                    <SaveIcon />
-                  </button>
-                  <button
-                    class={
-                      style.importButton +
-                      ' ' +
-                      (!this.state.leftSideSettings && this.props.index === 0
-                        ? style.buttonOpacity
-                        : '') +
-                      ' ' +
-                      (!this.state.rightSideSettings && this.props.index === 1
-                        ? style.buttonOpacity
-                        : '')
-                    }
-                    title="Import saved side settings"
-                    onClick={this.onImportSideSettingsClick}
-                    disabled={
-                      // Disabled if this side's settings haven't been saved
-                      (!this.state.leftSideSettings &&
-                        this.props.index === 0) ||
-                      (!this.state.rightSideSettings && this.props.index === 1)
-                    }
-                  >
-                    <ImportIcon />
-                  </button>
-                </div>
-              </h3>
-              <label class={style.sectionEnabler}>
-                Resize
-                <Toggle
-                  name="resize.enable"
-                  checked={!!processorState.resize.enabled}
-                  onChange={this.onProcessorEnabledChange}
+          <div>
+            <h3 class={style.optionsTitle}>
+              <div class={style.titleAndButtons}>
+                Edit
+                <button
+                  class={style.copyOverButton}
+                  title="Copy settings to other side"
+                  onClick={this.onCopyToOtherSideClick}
+                >
+                  <SwapIcon />
+                </button>
+                <button
+                  class={style.saveButton}
+                  title="Save side settings"
+                  onClick={this.onSaveSideSettingClick}
+                >
+                  <SaveIcon />
+                </button>
+                <button
+                  class={
+                    style.importButton +
+                    ' ' +
+                    (!this.state.leftSideSettings && this.props.index === 0
+                      ? style.buttonOpacity
+                      : '') +
+                    ' ' +
+                    (!this.state.rightSideSettings && this.props.index === 1
+                      ? style.buttonOpacity
+                      : '')
+                  }
+                  title="Import saved side settings"
+                  onClick={this.onImportSideSettingsClick}
+                  disabled={
+                    // Disabled if this side's settings haven't been saved
+                    (!this.state.leftSideSettings && this.props.index === 0) ||
+                    (!this.state.rightSideSettings && this.props.index === 1)
+                  }
+                >
+                  <ImportIcon />
+                </button>
+              </div>
+            </h3>
+            <label class={style.sectionEnabler}>
+              Resize
+              <Toggle
+                name="resize.enable"
+                checked={!!processorState.resize.enabled}
+                onChange={this.onProcessorEnabledChange}
+              />
+            </label>
+            <Expander>
+              {processorState.resize.enabled ? (
+                <ResizeOptionsComponent
+                  isVector={Boolean(source && source.vectorImage)}
+                  inputWidth={source ? source.preprocessed.width : 1}
+                  inputHeight={source ? source.preprocessed.height : 1}
+                  options={processorState.resize}
+                  onChange={this.onResizeOptionsChange}
                 />
-              </label>
-              <Expander>
-                {processorState.resize.enabled ? (
-                  <ResizeOptionsComponent
-                    isVector={Boolean(source && source.vectorImage)}
-                    inputWidth={source ? source.preprocessed.width : 1}
-                    inputHeight={source ? source.preprocessed.height : 1}
-                    options={processorState.resize}
-                    onChange={this.onResizeOptionsChange}
-                  />
-                ) : null}
-              </Expander>
+              ) : null}
+            </Expander>
 
-              <label class={style.sectionEnabler}>
-                Reduce palette
-                <Toggle
-                  name="quantize.enable"
-                  checked={!!processorState.quantize.enabled}
-                  onChange={this.onProcessorEnabledChange}
+            <label class={style.sectionEnabler}>
+              Isolating the Subject(PNG only)
+              <Toggle
+                name="leftSubjectMask.enable"
+                checked={!!processorState.leftSubjectMask.enabled}
+                onChange={this.onProcessorEnabledChange}
+              />
+            </label>
+            <Expander>
+              {processorState.leftSubjectMask.enabled ? (
+                <LeftSubjectMaskOptionsComponent
+                  options={processorState.leftSubjectMask}
+                  onChange={this.onLeftSubjectMaskOptionsChange}
                 />
-              </label>
-              <Expander>
-                {processorState.quantize.enabled ? (
-                  <QuantOptionsComponent
-                    options={processorState.quantize}
-                    onChange={this.onQuantizerOptionsChange}
-                  />
-                ) : null}
-              </Expander>
-            </div>
-          )}
+              ) : null}
+            </Expander>
+
+            <label class={style.sectionEnabler}>
+              Reduce palette
+              <Toggle
+                name="quantize.enable"
+                checked={!!processorState.quantize.enabled}
+                onChange={this.onProcessorEnabledChange}
+              />
+            </label>
+            <Expander>
+              {processorState.quantize.enabled ? (
+                <QuantOptionsComponent
+                  options={processorState.quantize}
+                  onChange={this.onQuantizerOptionsChange}
+                />
+              ) : null}
+            </Expander>
+          </div>
         </Expander>
 
         <h3 class={style.optionsTitle}>Compress</h3>

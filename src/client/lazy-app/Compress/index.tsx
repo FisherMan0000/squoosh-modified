@@ -156,6 +156,13 @@ async function processImage(
   if (processorState.resize.enabled) {
     result = await resize(signal, source, processorState.resize, workerBridge);
   }
+  if (processorState.leftSubjectMask.enabled) {
+    result = await workerBridge.leftSubjectMask(
+      signal,
+      result,
+      processorState.leftSubjectMask,
+    );
+  }
   if (processorState.quantize.enabled) {
     result = await workerBridge.quantize(
       signal,
@@ -341,9 +348,9 @@ export default class Compress extends Component<Props, State> {
   };
 
   private onEncoderTypeChange = (index: 0 | 1, newType: OutputType): void => {
-    this.setState({
+    this.setState((state) => ({
       sides: cleanSet(
-        this.state.sides,
+        state.sides,
         `${index}.latestSettings.encoderState`,
         newType === 'identity'
           ? undefined
@@ -352,33 +359,29 @@ export default class Compress extends Component<Props, State> {
               options: encoderMap[newType].meta.defaultOptions,
             },
       ),
-    });
+    }));
   };
 
   private onProcessorOptionsChange = (
     index: 0 | 1,
     options: ProcessorState,
   ): void => {
-    this.setState({
-      sides: cleanSet(
-        this.state.sides,
-        `${index}.latestSettings.processorState`,
-        options,
-      ),
-    });
+    this.setState((state) => ({
+      sides: cleanSet(state.sides, `${index}.latestSettings.processorState`, options),
+    }));
   };
 
   private onEncoderOptionsChange = (
     index: 0 | 1,
     options: EncoderOptions,
   ): void => {
-    this.setState({
+    this.setState((state) => ({
       sides: cleanSet(
-        this.state.sides,
+        state.sides,
         `${index}.latestSettings.encoderState.options`,
         options,
       ),
-    });
+    }));
   };
 
   componentWillReceiveProps(nextProps: Props): void {
